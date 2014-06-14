@@ -45,7 +45,6 @@ class BTCTray(gtk.StatusIcon):
 
 	def on_activate(self, data):
             self.update_price()
-            #os.spawnlpe(os.P_NOWAIT, 'tracker-search-tool', os.environ)
 
 	def on_popup_menu(self, status, button, time):
 		self.menu.popup(None, None, None, button, time)
@@ -53,7 +52,6 @@ class BTCTray(gtk.StatusIcon):
         def on_about(self, data):
 		dialog = gtk.AboutDialog()
 		dialog.set_name('BTCTray')
-		dialog.set_version('0.1')
 		dialog.set_comments('A bitcoin price "widget."  Click to issue a manual price update (default interval ' + str(BTCTray.UPDATEINTERVAL) + ' secs).')
 		dialog.run()
 		dialog.destroy()
