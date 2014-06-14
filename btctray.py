@@ -55,14 +55,14 @@ class BTCTray(gtk.StatusIcon):
         def on_about(self, data):
 		dialog = gtk.AboutDialog()
 		dialog.set_name('BTCTray')
-                dialog.set_authors('Murray Miron')
+                dialog.set_authors(('Murray Miron',))
                 dialog.set_website('https://github.com/mtmiron/btctray')
 		dialog.set_comments('A bitcoin price "widget."  Click to issue a manual price update (default interval ' + str(BTCTray.UPDATEINTERVAL) + ' secs).')
 		dialog.run()
 		dialog.destroy()
 
         def on_quit(self, data):
-            exit(0)
+            os._exit(0)
 
         def update_price(self):
             try:
