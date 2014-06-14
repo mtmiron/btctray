@@ -69,7 +69,7 @@ class BTCTray(gtk.StatusIcon):
 		self.set_tooltip(self.price['amount'] + " " + self.price['currency'])
             except IOError:
                 pass
-
+            return True
 
 
 if __name__ == '__main__':
