@@ -84,8 +84,7 @@ class BTCTray(gtk.StatusIcon):
                 resp = url.read()
                 url.close()
                 self.price = json.loads(resp)
-                str_price = "%s %s" % (self.price['amount'], self.price['currency'])
-		self.set_tooltip(str_price + ' [%s]' % (time.strftime("%X"),))
+		self.set_tooltip_markup("<b>$%s</b>   <small>%s</small>" % (self.price['amount'], time.strftime("%X")))
             except IOError as err:
                 str_price = "%s %s" % (self.price['amount'], self.price['currency'])
                 self.set_tooltip(str(err) + " (last known price " + str_price + ')')
