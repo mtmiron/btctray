@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# price URL: https://coinbase.com/api/v1/prices/spot_rate
+
+
 
 import os
 import gtk
