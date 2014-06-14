@@ -55,13 +55,14 @@ class BTCTray(gtk.StatusIcon):
         def on_about(self, data):
 		dialog = gtk.AboutDialog()
 		dialog.set_name('BTCTray')
+                dialog.set_authors('Murray Miron')
+                dialog.set_website('https://github.com/mtmiron/btctray')
 		dialog.set_comments('A bitcoin price "widget."  Click to issue a manual price update (default interval ' + str(BTCTray.UPDATEINTERVAL) + ' secs).')
 		dialog.run()
 		dialog.destroy()
 
         def on_quit(self, data):
             exit(0)
-
 
         def update_price(self):
             try:
@@ -70,13 +71,33 @@ class BTCTray(gtk.StatusIcon):
                 url.close()
                 self.price = json.loads(resp)
 		self.set_tooltip(self.price['amount'] + " " + self.price['currency'])
-            except IOError:
-                pass
+            except IOError as err:
+                price = self.get_tooltip_text()
+                self.set_tooltip(str(err) + " (last known price " + str(price) + ")")
             return True
+
+        def daemonize(self):
+            try:
+                pid = os.fork()
+            except OSError, e:
+                raise Exception, "%s [%d]" % (e.strerror, e.errno)
+            if (pid == 0):
+                os.setsid()
+                try:
+                    pid = os.fork()
+                except OSError, e:
+                    raise Exception, "%s [%d]" % (e.strerror, e.errno)
+                if (pid == 0):
+                    os.chdir('/')
+                else:
+                    os._exit(0)
+            else:
+                os._exit(0)
 
 
 if __name__ == '__main__':
 	app = BTCTray()
+        app.daemonize()
         app.update_price()
         glib.timeout_add_seconds(BTCTray.UPDATEINTERVAL, app.update_price)
-	gtk.main()
+	gtk.mainloop()
