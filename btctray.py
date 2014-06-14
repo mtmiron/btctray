@@ -32,6 +32,9 @@ class BTCTray(gtk.StatusIcon):
 			('About', gtk.STOCK_ABOUT, '_About...', None, 'About BTCTray', self.on_about),
                 ]
 
+                self.sets = gtk.settings_get_default()
+                self.sets.set_long_property('gtk-tooltip-timeout', 0, 'BTCTray.__init__')
+
 		ag = gtk.ActionGroup('Actions')
 		ag.add_actions(actions)
 		self.manager = gtk.UIManager()
@@ -75,6 +78,5 @@ class BTCTray(gtk.StatusIcon):
 if __name__ == '__main__':
 	app = BTCTray()
         app.update_price()
-
         glib.timeout_add_seconds(BTCTray.UPDATEINTERVAL, app.update_price)
 	gtk.main()
