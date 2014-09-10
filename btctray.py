@@ -8,7 +8,7 @@ import os
 import sys
 import gtk
 import gio
-import urllib
+import urllib2
 import json
 import glib
 import time
@@ -40,7 +40,8 @@ class BTCTray(gtk.StatusIcon):
                 ('About', gtk.STOCK_ABOUT, '_About...', None, 'About BTCTray', self.on_about),
             ]
 
-            self.options = {'update_interval': self.UPDATEINTERVAL}
+            self.options = {}
+            self.options['update_interval'] = self.read_update_interval()
             sets = gtk.settings_get_default()
             sets.set_long_property('gtk-tooltip-timeout', 0, 'BTCTray.__init__')
 
@@ -58,8 +59,34 @@ class BTCTray(gtk.StatusIcon):
             self.price = { 'amount': '0.00', 'currency': 'USD' }
 
 
-        def set_update_interval(self, data):
+        def set_update_interval(self, data = None, filename = None):
             self.options['update_interval'] = int(self.update_interval_entry.get_text())
+            if filename is None:
+                filename = os.environ['HOME'] + '/.btctray/update_interval'
+            if not os.path.exists(filename):
+                try:
+                    os.mkdir(os.path.dirname(filename))
+                except e:
+                    sys.stderr.write(e)
+            f = open(filename, 'w')
+            f.write(str(self.options['update_interval']))
+            f.close()
+            self.options_window.destroy()
+
+
+        def read_update_interval(self, data = None, filename = None):
+            if filename is None:
+                filename = os.environ['HOME'] + '/.btctray/update_interval'
+            if os.path.exists(filename):
+                f = open(filename, 'r')
+                try:
+                    self.options['update_interval'] = int(f.read())
+                    return self.options['update_interval']
+                finally:
+                    f.close()
+            else:
+                return BTCTray.UPDATEINTERVAL
+
 
         def on_options(self, data):
             self.options_window = gtk.Window()
@@ -78,7 +105,7 @@ class BTCTray(gtk.StatusIcon):
             self.options_window.show()
 
 
-        def on_activate(self, data):
+        def on_activate(self, data = None):
             # Reset our update timer since user has just forced a refresh
             glib.source_remove(self.current_timeout_id)
             self.current_timeout_id = glib.timeout_add_seconds(self.options['update_interval'], self.update_price)
@@ -94,7 +121,7 @@ class BTCTray(gtk.StatusIcon):
             dialog.set_name('BTCTray')
             dialog.set_authors(('Murray Miron',))
             dialog.set_website('https://github.com/mtmiron/btctray')
-            dialog.set_comments('A bitcoin price "widget."  Click to manually update price (auto updates every ' + str(BTCTray.UPDATEINTERVAL) + ' secs).')
+            dialog.set_comments('A bitcoin price "widget."  Click to manually update price (auto updates every ' + str(self.options['update_interval']) + ' secs).')
             dialog.run()
             dialog.destroy()
 
@@ -103,14 +130,17 @@ class BTCTray(gtk.StatusIcon):
             os._exit(0)
 
 
-        def update_price(self, data = None, uri = PRICEURL):
+        def update_price(self, data = None, url = PRICEURL):
             '''Updates the current price via a REST call.'''
             try:
-                url = urllib.urlopen(uri)
-                resp = url.read()
-                url.close()
+                self.set_tooltip_markup("<b>Loading...</b>  <small>%s</small>" % time.strftime("%X"))
+                op = urllib2.build_opener()
+                op.addheaders = [('User-Agent', "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11")]
+                sock = op.open(url)
+                resp = sock.read()
+                sock.close()
                 self.price = json.loads(resp)
-		self.set_tooltip_markup("<b>$%s</b>   <small>%s</small>" % (self.price['amount'], time.strftime("%X")))
+                self.set_tooltip_markup("<b>$%s</b>   <small>%s</small>" % (self.price['amount'], time.strftime("%X")))
             except IOError as err:
                 str_price = "%s %s" % (self.price['amount'], self.price['currency'])
                 self.set_tooltip(str(err) + " (last known price " + str_price + ')')
@@ -146,6 +176,5 @@ class BTCTray(gtk.StatusIcon):
 if __name__ == '__main__':
     app = BTCTray()
     app.daemonize()
-    app.update_price()
-    app.current_timeout_id = glib.timeout_add_seconds(BTCTray.UPDATEINTERVAL, app.update_price)
+    app.current_timeout_id = glib.timeout_add_seconds(2, app.on_activate)
     gtk.mainloop()
