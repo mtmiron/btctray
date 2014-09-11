@@ -91,7 +91,7 @@ class BTCTray(gtk.StatusIcon):
         def on_options(self, data):
             self.options_window = gtk.Window()
             self.update_interval_entry = entry = gtk.Entry()
-            entry.set_tooltip_text("Update interval in minutes.")
+            entry.set_tooltip_text("Update interval in minutes (enter 0 for manual updates only).")
             entry.set_text(str(self.options['update_interval']))
             entry.connect('activate', self.set_update_interval)
             hbox = gtk.HBox()
@@ -107,8 +107,12 @@ class BTCTray(gtk.StatusIcon):
 
         def on_activate(self, data = None):
             # Reset our update timer since user has just forced a refresh
-            glib.source_remove(self.current_timeout_id)
-            self.current_timeout_id = glib.timeout_add_seconds(self.options['update_interval'], self.update_price)
+            try:
+                glib.source_remove(self.current_timeout_id)
+            except e:
+                sys.stderr.write(str(e))
+            if self.options['update_interval'] != 0:
+                self.current_timeout_id = glib.timeout_add_seconds(self.options['update_interval'], self.update_price)
             self.update_price()
 
 
