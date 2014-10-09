@@ -52,7 +52,7 @@ class BTCTray(gtk.StatusIcon):
             self.manager.add_ui_from_string(menu)
             self.menu = self.manager.get_widget('/Menubar/Menu/About').props.parent
 
-            self.set_from_file("bitcoin-black.png")
+            self.set_from_file(os.path.dirname(os.path.realpath(sys.argv[0])) + "/bitcoin-black.png")
             self.set_visible(True)
             self.connect('activate', self.on_activate)
             self.connect('popup-menu', self.on_popup_menu)
