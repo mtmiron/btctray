@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 # CoinDesk price URL is https://api.coindesk.com/v1/bpi/currentprice.json 
 # (however the returned JSON is of a different structure than Coinbase)
@@ -17,7 +17,7 @@ import time
 class BTCTray(gtk.StatusIcon):
         # The spot_rate is defined by Coinbase as falling somewhere between their current buy & sell prices
         PRICEURL = 'https://coinbase.com/api/v1/prices/spot_rate'
-        UPDATEINTERVAL = 3600
+        UPDATEINTERVAL = 60
 
         def __init__(self):
             gtk.StatusIcon.__init__(self)
@@ -112,7 +112,7 @@ class BTCTray(gtk.StatusIcon):
             except e:
                 sys.stderr.write(str(e))
             if self.options['update_interval'] != 0:
-                self.current_timeout_id = glib.timeout_add_seconds(self.options['update_interval'], self.update_price)
+                self.current_timeout_id = glib.timeout_add_seconds(self.options['update_interval'] * 60, self.update_price)
             self.update_price()
 
 
@@ -125,7 +125,7 @@ class BTCTray(gtk.StatusIcon):
             dialog.set_name('BTCTray')
             dialog.set_authors(('Murray Miron',))
             dialog.set_website('https://github.com/mtmiron/btctray')
-            dialog.set_comments('A bitcoin price "widget."  Click to manually update price (auto updates every ' + str(self.options['update_interval']) + ' secs).')
+            dialog.set_comments('A bitcoin price "widget."  Click to manually update price (auto updates every ' + str(self.options['update_interval']) + ' mins).')
             dialog.run()
             dialog.destroy()
 
