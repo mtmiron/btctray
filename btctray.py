@@ -139,7 +139,7 @@ class BTCTray(gtk.StatusIcon):
             try:
                 self.set_tooltip_markup("<b>Loading...</b>  <small>%s</small>" % time.strftime("%X"))
                 op = urllib2.build_opener()
-                op.addheaders = [('User-Agent', "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11")]
+                op.addheaders = [('User-Agent', "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"), ('Connection', 'close')]
                 sock = op.open(url)
                 resp = sock.read()
                 sock.close()
