@@ -42,6 +42,9 @@ class BTCTray(gtk.StatusIcon):
 
             self.options = {}
             self.options['update_interval'] = self.read_update_interval()
+            self.options['price_alert'] = self.read_price_alert()
+            self.price_alert = self.options['price_alert']
+
             sets = gtk.settings_get_default()
             sets.set_long_property('gtk-tooltip-timeout', 0, 'BTCTray.__init__')
 
@@ -66,10 +69,26 @@ class BTCTray(gtk.StatusIcon):
             if not os.path.exists(filename):
                 try:
                     os.mkdir(os.path.dirname(filename))
-                except e:
-                    sys.stderr.write(e)
+                except Exception, e:
+                    sys.stderr.write(str(e))
             f = open(filename, 'w')
             f.write(str(self.options['update_interval']))
+            f.close()
+            self.options_window.destroy()
+
+
+        def set_price_alert(self, data = None, filename = None):
+            self.options['price_alert'] = float(self.price_alert_entry.get_text())
+            self.price_alert = self.options['price_alert']
+            if filename is None:
+                filename = os.environ['HOME'] + '/.btctray/price_alert'
+            if not os.path.exists(filename):
+                try:
+                    os.mkdir(os.path.dirname(filename))
+                except Exception, e:
+                    sys.stderr.write(str(e))
+            f = open(filename, 'w')
+            f.write(str(self.options['price_alert']))
             f.close()
             self.options_window.destroy()
 
@@ -88,20 +107,58 @@ class BTCTray(gtk.StatusIcon):
                 return BTCTray.UPDATEINTERVAL
 
 
+        def read_price_alert(self, data = None, filename = None):
+            if filename is None:
+                filename = os.environ['HOME'] + '/.btctray/price_alert'
+            if os.path.exists(filename):
+                f = open(filename, 'r')
+                try:
+                    self.options['price_alert'] = float(f.read())
+                    self.price_alert = self.options['price_alert']
+                    return self.options['price_alert']
+                finally:
+                    f.close()
+            else:
+                return self.price_alert
+
+
         def on_options(self, data):
             self.options_window = gtk.Window()
             self.update_interval_entry = entry = gtk.Entry()
             entry.set_tooltip_text("Update interval in minutes (enter 0 for manual updates only).")
             entry.set_text(str(self.options['update_interval']))
             entry.connect('activate', self.set_update_interval)
+            entry.connect('activate', self.set_price_alert)
+
+            vbox = gtk.VBox()
+            vbox.show()
+
             hbox = gtk.HBox()
             label = gtk.Label("Update interval: ")
             hbox.pack_start(label)
             hbox.pack_end(entry)
-            self.options_window.add(hbox)
+            vbox.pack_start(hbox)
+
+            hbox2 = gtk.HBox()
+            label2 = gtk.Label("Notify on price breaking: ")
+            self.price_alert_entry = entry2 = gtk.Entry()
+            entry2.set_text(str(self.options['price_alert']))
+            entry2.connect('activate', self.set_price_alert)
+            entry2.connect('activate', self.set_update_interval)
+
+            hbox2.pack_start(label2)
+            hbox2.pack_end(entry2)
+            vbox.pack_end(hbox2)
+
+            hbox2.show()
+            label2.show()
+            entry2.show()
+
             entry.show()
             hbox.show()
             label.show()
+
+            self.options_window.add(vbox)
             self.options_window.show()
 
 
@@ -130,6 +187,14 @@ class BTCTray(gtk.StatusIcon):
             dialog.destroy()
 
 
+        def show_price_alert(self, data = None):
+            dialog = gtk.AboutDialog()
+            dialog.set_name('Price Alert')
+            dialog.set_comments("The Bitcoin price has passed your specified value.")
+            dialog.run()
+            dialog.destroy()
+
+
         def on_quit(self, data):
             os._exit(0)
 
@@ -137,6 +202,7 @@ class BTCTray(gtk.StatusIcon):
         def update_price(self, data = None, url = PRICEURL):
             '''Updates the current price via a REST call.'''
             try:
+                old_price = float(self.price['amount'])
                 self.set_tooltip_markup("<b>Loading...</b>  <small>%s</small>" % time.strftime("%X"))
                 op = urllib2.build_opener()
                 op.addheaders = [('User-Agent', "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"), ('Connection', 'close')]
@@ -145,6 +211,15 @@ class BTCTray(gtk.StatusIcon):
                 sock.close()
                 self.price = json.loads(resp)
                 self.set_tooltip_markup("<b>$%s</b>   <small>%s</small>" % (self.price['amount'], time.strftime("%X")))
+
+                #sys.stderr.write("old_price: %f  price_alert: %f  price:  %f\n" % (old_price, self.price_alert, float(self.price['amount'])))
+                if (old_price == 0):
+                    return
+                elif (old_price > self.price_alert) and (float(self.price['amount']) < self.price_alert):
+                    self.show_price_alert()
+                elif (old_price < self.price_alert) and (float(self.price['amount']) > self.price_alert):
+                    self.show_price_alert()
+
             except IOError as err:
                 str_price = "%s %s" % (self.price['amount'], self.price['currency'])
                 self.set_tooltip(str(err) + " (last known price " + str_price + ')')
