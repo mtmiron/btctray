@@ -111,14 +111,19 @@ class BTCTray(gtk.StatusIcon):
             if filename is None:
                 filename = os.environ['HOME'] + '/.btctray/price_alert'
             if os.path.exists(filename):
-                f = open(filename, 'r')
                 try:
+                    f = open(filename, 'r')
                     self.options['price_alert'] = float(f.read())
                     self.price_alert = self.options['price_alert']
                     return self.options['price_alert']
+                except:
+                    self.options['price_alert'] = 0.0
+                    self.price_alert = self.options['price_alert']
                 finally:
                     f.close()
             else:
+                if not hasattr(self, 'price_alert'):
+                    self.price_alert = 0.0
                 return self.price_alert
 
 
