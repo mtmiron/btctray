@@ -60,7 +60,7 @@ class BTCTray(gtk.StatusIcon):
             self.set_visible(True)
             self.connect('activate', self.on_activate)
             self.connect('popup-menu', self.on_popup_menu)
-            self.price = { 'amount': '0.00', 'currency': 'USD' }
+            self.price = { 'data': { 'amount': '0.00', 'currency': 'USD' } }
 
 
         def set_update_interval(self, data = None, filename = None):
@@ -208,7 +208,7 @@ class BTCTray(gtk.StatusIcon):
         def update_price(self, data = None, url = PRICEURL):
             '''Updates the current price via a REST call.'''
             try:
-                old_price = float(self.price['amount'])
+                old_price = float(self.price['data']['amount'])
                 self.set_tooltip_markup("<b>Loading...</b>  <small>%s</small>" % time.strftime("%X"))
                 op = urllib2.build_opener()
                 op.addheaders = [('User-Agent', "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"), ('Connection', 'close')]
@@ -221,13 +221,13 @@ class BTCTray(gtk.StatusIcon):
                 #sys.stderr.write("old_price: %f  price_alert: %f  price:  %f\n" % (old_price, self.price_alert, float(self.price['amount'])))
                 if (old_price == 0):
                     return
-                elif (old_price > self.price_alert) and (float(self.price['amount']) < self.price_alert):
+                elif (old_price > self.price_alert) and (float(self.price['data']['amount']) < self.price_alert):
                     self.show_price_alert()
-                elif (old_price < self.price_alert) and (float(self.price['amount']) > self.price_alert):
+                elif (old_price < self.price_alert) and (float(self.price['data']['amount']) > self.price_alert):
                     self.show_price_alert()
 
             except IOError as err:
-                str_price = "%s %s" % (self.price['amount'], self.price['currency'])
+                str_price = "%s %s" % (self.price['data']['amount'], self.price['data']['currency'])
                 self.set_tooltip(str(err) + " (last known price " + str_price + ')')
             return True
 
