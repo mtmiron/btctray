@@ -16,7 +16,8 @@ import time
 
 class BTCTray(gtk.StatusIcon):
         # The spot_rate is defined by Coinbase as falling somewhere between their current buy & sell prices
-        PRICEURL = 'https://coinbase.com/api/v1/prices/spot_rate'
+        #PRICEURL = 'https://coinbase.com/api/v1/prices/spot_rate'
+        PRICEURL = 'https://api.coinbase.com/v2/prices/BTC-USD/spot'
         UPDATEINTERVAL = 60
 
         def __init__(self):
@@ -215,7 +216,7 @@ class BTCTray(gtk.StatusIcon):
                 resp = sock.read()
                 sock.close()
                 self.price = json.loads(resp)
-                self.set_tooltip_markup("<b>$%s</b>   <small>%s</small>" % (self.price['amount'], time.strftime("%X")))
+                self.set_tooltip_markup("<b>$%s</b>   <small>%s</small>" % (self.price['data']['amount'], time.strftime("%X")))
 
                 #sys.stderr.write("old_price: %f  price_alert: %f  price:  %f\n" % (old_price, self.price_alert, float(self.price['amount'])))
                 if (old_price == 0):
