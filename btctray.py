@@ -18,6 +18,7 @@ class BTCTray(gtk.StatusIcon):
         # The spot_rate is defined by Coinbase as falling somewhere between their current buy & sell prices
         #PRICEURL = 'https://coinbase.com/api/v1/prices/spot_rate'
         PRICEURL = 'https://api.coinbase.com/v2/prices/BTC-USD/spot'
+        MONEROPRICEURL = 'https://min-api.cryptocompare.com/data/price?fsym=XMR&tsyms=BTC,USD'
         UPDATEINTERVAL = 60
 
         def __init__(self):
@@ -210,6 +211,7 @@ class BTCTray(gtk.StatusIcon):
             try:
                 old_price = float(self.price['data']['amount'])
                 self.set_tooltip_markup("<b>Loading...</b>  <small>%s</small>" % time.strftime("%X"))
+
                 op = urllib2.build_opener()
                 op.addheaders = [('User-Agent', "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"), ('Connection', 'close')]
                 sock = op.open(url)
@@ -217,6 +219,12 @@ class BTCTray(gtk.StatusIcon):
                 sock.close()
                 self.price = json.loads(resp)
                 self.set_tooltip_markup("<b>$%s</b>   <small>%s</small>" % (self.price['data']['amount'], time.strftime("%X")))
+
+                import requests
+                resp = requests.get(self.MONEROPRICEURL)
+                if resp.ok:
+                    price = resp.json()['USD']
+                    self.set_tooltip_markup("<b>BTC: $%s  XMR: $%s</b>  <small>%s</small>" % (self.price['data']['amount'], price, time.strftime("%X")))
 
                 #sys.stderr.write("old_price: %f  price_alert: %f  price:  %f\n" % (old_price, self.price_alert, float(self.price['amount'])))
                 if (old_price == 0):
