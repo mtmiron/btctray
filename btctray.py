@@ -197,7 +197,7 @@ class BTCTray(gtk.StatusIcon):
         def show_price_alert(self, data = None):
             dialog = gtk.AboutDialog()
             dialog.set_name('Price Alert')
-            dialog.set_comments("The Bitcoin price has passed your specified value.")
+            dialog.set_comments("The Bitcoin or XMR price has passed your specified value.")
             dialog.run()
             dialog.destroy()
 
@@ -210,6 +210,11 @@ class BTCTray(gtk.StatusIcon):
             '''Updates the current price via a REST call.'''
             try:
                 old_price = float(self.price['data']['amount'])
+                if hasattr(self, 'xmr'):
+                    old_xmr_price = float(self.xmr['USD'])
+                else:
+                    old_xmr_price = 0
+
                 self.set_tooltip_markup("<b>Loading...</b>  <small>%s</small>" % time.strftime("%X"))
 
                 op = urllib2.build_opener()
@@ -223,8 +228,8 @@ class BTCTray(gtk.StatusIcon):
                 import requests
                 resp = requests.get(self.MONEROPRICEURL)
                 if resp.ok:
-                    price = resp.json()['USD']
-                    self.set_tooltip_markup("<b>BTC: $%s  XMR: $%s</b>  <small>%s</small>" % (self.price['data']['amount'], price, time.strftime("%X")))
+                    self.xmr = resp.json()
+                    self.set_tooltip_markup("<b>BTC: $%s  XMR: $%s</b>  <small>%s</small>" % (self.price['data']['amount'], self.xmr['USD'], time.strftime("%X")))
 
                 #sys.stderr.write("old_price: %f  price_alert: %f  price:  %f\n" % (old_price, self.price_alert, float(self.price['amount'])))
                 if (old_price == 0):
@@ -232,6 +237,13 @@ class BTCTray(gtk.StatusIcon):
                 elif (old_price > self.price_alert) and (float(self.price['data']['amount']) < self.price_alert):
                     self.show_price_alert()
                 elif (old_price < self.price_alert) and (float(self.price['data']['amount']) > self.price_alert):
+                    self.show_price_alert()
+
+                if (old_xmr_price == 0):
+                    return
+                elif (old_xmr_price > self.price_alert) and (float(self.xmr['USD']) < self.price_alert):
+                    self.show_price_alert()
+                elif (old_xmr_price < self.price_alert) and (float(self.xmr['USD']) > self.price_alert):
                     self.show_price_alert()
 
             except IOError as err:
