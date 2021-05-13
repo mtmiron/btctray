@@ -4,14 +4,15 @@
 # (however the returned JSON is of a different structure than Coinbase)
 
 
+import json
 import os
 import sys
-import gtk
-import gio
-import urllib2
-import json
-import glib
 import time
+
+import gio
+import glib
+import gtk
+import urllib2
 
 
 class BTCTray(gtk.StatusIcon):
@@ -80,7 +81,10 @@ class BTCTray(gtk.StatusIcon):
 
 
         def set_price_alert(self, data = None, filename = None):
-            self.options['price_alert'] = float(self.price_alert_entry.get_text())
+            if self.price_alert_entry.get_text().strip() == "":
+                self.options['price_alert'] = 0.0
+            else:
+                self.options['price_alert'] = float(self.price_alert_entry.get_text())
             self.price_alert = self.options['price_alert']
             if filename is None:
                 filename = os.environ['HOME'] + '/.btctray/price_alert'
@@ -197,7 +201,7 @@ class BTCTray(gtk.StatusIcon):
         def show_price_alert(self, data = None):
             dialog = gtk.AboutDialog()
             dialog.set_name('Price Alert')
-            dialog.set_comments("The Bitcoin or XMR price has passed your specified value.")
+            dialog.set_comments("The Bitcoin or Monero price has passed your specified value.")
             dialog.run()
             dialog.destroy()
 
